@@ -84,6 +84,35 @@ start_element:element
 
 end_element:element
 </	li	>
+
+start_element:chartest
+<	li	>
+	Characters: 
+++	chartest
+
+end_element:chartest
+--	chartest
+</	li	>
+
+characters:chartest
+	~Data~
+
+start_element:cdatatest
+<	li	>
+++	cdatatest
+
+end_element:cdatatest
+--	cdatatest
+</	li	>
+
+start_cdata:cdatatest
+	[CDATA STARTS]
+
+end_cdata:cdatatest
+	[CDATA ENDS]
+
+characters:cdatatest
+	~Data~
 !HERE!
 
 my $xml_file = new IO::File( '>sdsd.html' );

@@ -410,5 +410,12 @@
 	pos="010"
 	repr="a1"
 /></segment
+>
+<chartest
+>some characters and more</chartest
+>
+<cdatatest
+><![CDATA[some cdata characters and more]]></cdatatest
+>
 ></repository
 >

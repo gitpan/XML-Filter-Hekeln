@@ -104,4 +104,13 @@ first line and any line in an interpreted paragraph that does have a
 valid indicator are silently ignored. Perhaps future version will raise
 warnings and errors.
 
+=head1 AUTHOR
 
+  Michael Koehne, Kraehe@Copyleft.De
+  (c) 2000 GNU General Public License
+
+=head1 SEE ALSO
+
+L<XML::Parser::PerlSAX> and L<XML::Filter::Hekeln>
+
+=cut

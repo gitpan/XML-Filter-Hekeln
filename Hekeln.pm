@@ -9,7 +9,7 @@ use UNIVERSAL;
 use strict;
 use vars qw($VERSION $METHODS);
 
-$VERSION = '0.04';
+$VERSION = '0.05';
 $METHODS = {
 	start_document => 1,
 	end_document => 1,
@@ -17,6 +17,8 @@ $METHODS = {
 	processing_instruction => 1,
 	start_element => 1,
 	end_element => 1,
+	start_cdata => 1,
+	end_cdata => 1,
 	characters => 1
 	};
 
@@ -55,6 +57,8 @@ sub script {
 	my ($key,$val,$str);
 	my (@v, $o, $p);
 	my $action;
+
+	local $SIG{__WARN__} = sub { die $_[0] };
 
 	foreach (split /\n\n/, $script) {
 		if ($_ !~ /^#/) {
@@ -106,7 +110,7 @@ sub script {
 					}
 					if ($o eq '++') {
 						$str .= '$self->{Flag}{'.$p.'}=1;';
-						$str .= 'unshift $self->{Stack}, "'.$p.'";';
+						$str .= 'unshift @{$self->{Stack}}, "'.$p.'";';
 						$str .= "\n\t";
 						next SCRIPT_TO_SUB_SW;
 					}
@@ -117,7 +121,7 @@ sub script {
 					}
 					if ($o eq '--') {
 						$str .= '$self->{Flag}{'.$p.'}=0;';
-						$str .= 'shift $self->{Stack}, "'.$p.'" if $self->{Stack}[0] eq "'.$p.'";';
+						$str .= 'shift @{$self->{Stack}} if $self->{Stack}[0] eq "'.$p.'";';
 						$str .= "\n\t";
 						next SCRIPT_TO_SUB_SW;
 					}
@@ -136,6 +140,9 @@ sub script {
 				print STDERR '$hash->{'.$key.'}=eval "'.$str.'";'."\n\n"
 					if $self->{'Debug'};
 				$action = eval $str;
+				if ($@) {
+					print STDERR "Error: $key: "; die $@
+				}
 				$hash->{$key}=$action;
 			}
 		}
@@ -149,6 +156,8 @@ sub doctype_decl		{ my ($self, $param) = @_; $self->style('doctype_decl',$param)
 sub processing_instruction	{ my ($self, $param) = @_; $self->style('processing_instruction',$param); }
 sub start_element		{ my ($self, $param) = @_; $self->style('start_element',$param); }
 sub end_element			{ my ($self, $param) = @_; $self->style('end_element',$param); }
+sub start_cdata			{ my ($self, $param) = @_; $self->style('start_cdata',$param); }
+sub end_cdata			{ my ($self, $param) = @_; $self->style('end_cdata',$param); }
 sub characters			{ my ($self, $param) = @_; $self->style('characters',$param); }
 
 sub style {
@@ -161,6 +170,10 @@ sub style {
 	my $target = "*";
 	   $target = $param->{'Name'}   if $param->{'Name'};
 	   $target = $param->{'Target'} if $param->{'Target'};
+	   $target = $self->{Stack}[0]  if ( $event eq 'characters' or
+					     $event eq 'start_cdata' or
+					     $event eq 'end_cdata' ) and
+					     $self->{Flag}{$self->{Stack}[0]};
 
 	my $action = $self->{'Action'}{$event.':'.$target};
 	return undef unless $action;
@@ -191,7 +204,7 @@ XML::Filter::Hekeln - a SAX stream editor
 =head1 SYNOPSIS
 
   use XML::Filter::Hekeln;
- 
+
   my $hander = new SAXHandler( ... );
   my $hekeln = new XML::Filter::Hekeln(
   	'Handler' => $handler,
@@ -327,12 +340,12 @@ possible to code conditionals or even loops with a constructions like
 those :
 
 	!	$self->{Flag}{FooBaa}=1;
-	!	unshift $self->{Stack}, "FooBaa";
+	!	unshift @{$self->{Stack}}, "FooBaa";
 
 and
 
 	!	$self->{Flag}{FooBaa}=undef;
-	!	shift $self->{Stack} if $self->{Stack}[0] eq "FooBaa";
+	!	shift @{$self->{Stack}} if $self->{Stack}[0] eq "FooBaa";
 
 and
 
